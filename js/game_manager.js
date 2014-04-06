@@ -72,9 +72,11 @@ GameManager.prototype.addStartTiles = function () {
 // Adds a tile in a random position
 GameManager.prototype.addRandomTile = function () {
   if (this.grid.cellsAvailable()) {
-    var value = Math.random() < 0.9 ? 3 : 9;
-    var tile = new Tile(this.grid.randomAvailableCell(), value);
-
+    var colors = new Array('red', 'green', 'blue'); // list of possible colors
+    var color = colors[Math.floor(Math.random() * colors.length)];
+    var num = Math.floor(Math.random() * 3) + 1;
+    var den = Math.floor(Math.random() * 3) + 1;
+    var tile = new Tile(this.grid.randomAvailableCell(), new Fraction(num, den), color);
     this.grid.insertTile(tile);
   }
 };
@@ -157,8 +159,12 @@ GameManager.prototype.move = function (direction) {
         var next      = self.grid.cellContent(positions.next);
 
         // Only one merger per row traversal?
-        if (next && next.value === tile.value && !next.mergedFrom) {
-          var merged = new Tile(positions.next, tile.value * 3);
+        if (next && next.color === tile.color && !next.mergedFrom) {
+          var flip1 = new Fraction(tile.value.denominator, tile.value.numerator);
+          var flip2 = new Fraction(next.value.denominator, next.value.numerator);
+          var combined = flip1.add(flip2);
+          var value = new Fraction(combined.denominator, combined.numerator);
+          var merged = new Tile(positions.next, value, tile.color);
           merged.mergedFrom = [tile, next];
 
           self.grid.insertTile(merged);
@@ -168,10 +174,10 @@ GameManager.prototype.move = function (direction) {
           tile.updatePosition(positions.next);
 
           // Update the score
-          self.score += merged.value;
+          self.score += merged.value.denominator;
 
-          // The mighty 177147 tile
-          if (merged.value === 177147) self.won = true;
+          // Check for winning
+          if (false) self.won = true;
         } else {
           self.moveTile(tile, positions.farthest);
         }
@@ -260,7 +266,7 @@ GameManager.prototype.tileMatchesAvailable = function () {
 
           var other  = self.grid.cellContent(cell);
 
-          if (other && other.value === tile.value) {
+          if (other && other.color === tile.color) {
             return true; // These two tiles can be merged
           }
         }
